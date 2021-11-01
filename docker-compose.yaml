@@ -8,3 +8,8 @@ services:
       POSTGRES_PASSWORD: main
       POSTGRES_DB: main
     ports: [5432]
+
+  web:
+    build: docker/
+    ports:
+      - 8080:80
