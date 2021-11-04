@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Command;
 
+use src\Command\Cat;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -26,13 +27,17 @@ class FetchRepositoryCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        echo "test".PHP_EOL;
+        $cat = new Cat("orange", 5);
+        dump($cat);
 
-        $this->httpClient->request('GET', 'https://api.github.com/users/octocat/orgs');
 
-        $response = $this->httpClient->request('GET', 'https://api.github.com/users/GITFenix/repos');
-
-        dump($response->toArray());die;
+//        echo "test".PHP_EOL;
+//
+//        $this->httpClient->request('GET', 'https://api.github.com/users/octocat/orgs');
+//
+//        $response = $this->httpClient->request('GET', 'https://api.github.com/users/GITFenix/repos');
+//
+//        dump($response->toArray());die;
 
 
         // ... put here the code to create the user
