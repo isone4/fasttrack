@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Command;
 
-use src\Command\Cat;
+use App\Entity\Cat;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -16,19 +17,30 @@ class FetchRepositoryCommand extends Command
      * @var HttpClientInterface
      */
     private $httpClient;
+    /**
+     * @var EntityManagerInterface
+     */
+    private $entityManager;
 
-    public function __construct(HttpClientInterface $httpClient)
+    public function __construct(HttpClientInterface $httpClient, EntityManagerInterface $entityManager)
     {
         parent::__construct();
         $this->httpClient = $httpClient;
+        $this->entityManager = $entityManager;
     }
 
     protected static $defaultName = 'app:fetch-repository';
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $cat = new Cat("orange", 5);
+        $race = 'dachowiec';
+        $cat = new Cat('blue', $race);
+        $cat2 = new Cat('green', 'perski');
         dump($cat);
+        dump($cat2);
+        $this->entityManager->persist($cat);
+        $this->entityManager->persist($cat2);
+        $this->entityManager->flush();
 
 
 //        echo "test".PHP_EOL;
