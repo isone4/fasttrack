@@ -9,12 +9,10 @@
 </style>
 
 <div class="example-wrapper">
-    <h1>Hello {{ controller_name }}! ✅</h1>
-
     This friendly message is coming from:
-    <ul>
-        <li>Your controller at <code><a href="{{ '/home/aviano/PhpstormProjects/untitled/guestbook556/src/Controller/RepoController.php'|file_link(0) }}">src/Controller/RepoController.php</a></code></li>
-        <li>Your template at <code><a href="{{ '/home/aviano/PhpstormProjects/untitled/guestbook556/templates/repo/index.html.twig'|file_link(0) }}">templates/repo/index.html.twig</a></code></li>
-    </ul>
+
+    {% for repository in repositories %}
+        <div>{{ repository.getReponame }} </div>
+    {% endfor %}
 </div>
 {% endblock %}
