@@ -30,19 +30,36 @@ class CodeRepo
     /**
      * @ORM\Column(type="integer")
      */
-    private $trustpoints;
+    private $trustpoints = 0;
 
     /**
      * @ORM\Column(type="string", length=255)
      */
     private $url;
 
-    public function __construct(string $orgname, string $reponame, string $trustpoints, string $url)
+    /**
+     * @ORM\Column(type="string", length=255)
+     */
+    private $provider;
+
+    /**
+     * @ORM\Column(type="date")
+     */
+    private $creationdate;
+
+    /**
+     * @ORM\Column(type="string")
+     */
+    private $externalId;
+
+    public function __construct(string $externalId, string $orgname, string $reponame, string $url, string $provider, \DateTimeImmutable $creationdate)
     {
+        $this->externalId = $externalId;
         $this->orgname = $orgname;
         $this->reponame = $reponame;
-        $this->trustpoints = $trustpoints;
         $this->url = $url;
+        $this->provider = $provider;
+        $this->creationdate = $creationdate;
     }
 
     public function getId(): ?int
@@ -94,6 +111,42 @@ class CodeRepo
     public function setUrl(string $url): self
     {
         $this->url = $url;
+
+        return $this;
+    }
+
+    public function getProvider(): ?string
+    {
+        return $this->provider;
+    }
+
+    public function setProvider(string $provider): self
+    {
+        $this->provider = $provider;
+
+        return $this;
+    }
+
+    public function getCreationdate(): ?\DateTimeInterface
+    {
+        return $this->creationdate;
+    }
+
+    public function setCreationdate(\DateTimeInterface $creationdate): self
+    {
+        $this->creationdate = $creationdate;
+
+        return $this;
+    }
+
+    public function getExternalId(): ?string
+    {
+        return $this->externalId;
+    }
+
+    public function setExternalId(string $externalId): self
+    {
+        $this->externalId = $externalId;
 
         return $this;
     }
