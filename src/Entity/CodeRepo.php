@@ -52,8 +52,14 @@ class CodeRepo
      */
     private $externalId;
 
-    public function __construct(string $externalId, string $orgname, string $reponame, string $url, string $provider, \DateTimeImmutable $creationdate)
-    {
+    public function __construct(
+        string $externalId,
+        string $orgname,
+        string $reponame,
+        string $url,
+        string $provider,
+        \DateTimeImmutable $creationdate
+    ) {
         $this->externalId = $externalId;
         $this->orgname = $orgname;
         $this->reponame = $reponame;

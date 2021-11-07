@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Command;
 
-use App\Entity\Cat;
 use App\Entity\CodeRepo;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
@@ -47,83 +46,25 @@ class FetchRepositoryCommand extends Command
 
         $fetchedData = $response->toArray();
 
+        $counter = 0;
         foreach($fetchedData as $item) {
-            $codeRepo = new CodeRepo((string) $item['id'], $orgname, $item['name'], $item['html_url'], 'github', new \DateTimeImmutable($item['created_at']));
+            $codeRepo = $this->entityManager->getRepository(CodeRepo::class)->findOneBy(['externalId'=>$item['id']]);
+            if ($codeRepo) {
+                continue;
+            }
+            $codeRepo = new CodeRepo(
+                (string) $item['id'],
+                $orgname,
+                $item['name'],
+                $item['html_url'],
+                'github',
+                new \DateTimeImmutable($item['created_at']));
             $this->entityManager->persist($codeRepo);
+            $counter++;
         }
-        //        $race = 'dachowiec';
-        //        $cat = new Cat('blue', $race);
-
 
         $this->entityManager->flush();
-
-
-
-
-
-        /////////////////////////////////////////////////////////////////////////////////////////////
-
-        //        $dupa =    $this->entityManager->getRepository(Cat::class)->findOneBy(['color'=>'blue']);
-//            dump($dupa);die;
-//
-////        'test';
-////        "test";
-////
-////        'https://api.github.com/users/'.$orgname.'/repos';
-////
-////        sprintf('https://api.github.com/users/%s/repos', $orgname);
-//
-//
-//        $exampleArray[] = [
-//
-//
-//
-//        foreach ($exampleArray as $repo) {
-//            dump($repo['name'], $repo['owner']['login']);
-//
-//
-//        }
-
-
-//        dump($response->toArray());die;
-
-//        $race = 'dachowiec';
-//        $cat = new Cat('blue', $race);
-//        $cat2 = new Cat('green', 'perski');
-//        dump($cat);
-//        dump($cat2);
-//        $this->entityManager->persist($cat);
-//        $this->entityManager->persist($cat2);
-//        $this->entityManager->flush();
-
-
-
-//        echo "test".PHP_EOL;
-//
-//        $this->httpClient->request('GET', 'https://api.github.com/users/octocat/orgs');
-//
-//        $response = $this->httpClient->request('GET', 'https://api.github.com/users/GITFenix/repos');
-//
-//        dump($response->toArray());die;
-
-
-        // ... put here the code to create the user
-
-        // this method must return an integer number with the "exit status code"
-        // of the command. You can also use these constants to make code more readable
-
-        // return this if there was no problem running the command
-        // (it's equivalent to returning int(0))
-
-
-        // or return this if some error happened during the execution
-        // (it's equivalent to returning int(1))
-        // return Command::FAILURE;
-
-        // or return this to indicate incorrect command usage; e.g. invalid options
-        // or missing arguments (it's equivalent to returning int(2))
-        // return Command::INVALID
-
+        $output->writeln('We have saved '.$counter.' new elements');
 
         return Command::SUCCESS;
     }
