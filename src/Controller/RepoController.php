@@ -22,7 +22,7 @@ class RepoController extends AbstractController
     #[Route('/repo', name: 'repo')]
     public function index(): Response
     {
-        $repositories = $this->entityManager->getRepository(CodeRepo::class)->findAll();
+        $repositories = $this->entityManager->getRepository(CodeRepo::class)->findBy([], ['creationdate' => 'DESC']);
 
         return $this->render('repo/index.html.twig', [
             'repositories' => $repositories,

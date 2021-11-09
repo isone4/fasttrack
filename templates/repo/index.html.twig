@@ -2,6 +2,20 @@
 
 {% block title %}Hello RepoController!{% endblock %}
 
+{% block stylesheets %}
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.css">
+{% endblock %}
+
+{% block javascripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.js"></script>
+<script>
+    $(document).ready( function () {
+    $('#myTable').DataTable();
+})
+</script>
+{% endblock %}
+
 {% block body %}
 <style>
     .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
@@ -9,7 +23,9 @@
 </style>
 
 <div class="example-wrapper">
-    <table style="width:100%">
+
+    <table id="myTable">
+        <thead>
             <tr>
                     <th>ID:</th>
                     <th>Organization:</th>
@@ -18,18 +34,21 @@
                     <th>Trust Points:</th>
                     <th>Creation Date:</th>
             </tr>
+        </thead>
 
+        <tbody>
             {% for repository in repositories %}
             <tr>
                 <td> {{ repository.getId }} </td>
                 <td> {{ repository.getOrgname }} </td>
-                <td> {{ repository.getReponame }} </td>
+                <td> <a href="{{ repository.getUrl }}" target="_blank"> {{ repository.getReponame }} </a></td>
                 <td> {{ repository.getProvider }} </td>
                 <td> {{ repository.getTrustpoints }} </td>
-                <td>{{ repository.getCreationdate|date("m.d.Y") }}</td>
+                <td> {{ repository.getCreationdate|date("m.d.Y") }}</td>
             </tr>
 
             {% endfor %}
+        </tbody>
     </table>
 </div>
 {% endblock %}
