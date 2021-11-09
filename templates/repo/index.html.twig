@@ -9,10 +9,27 @@
 </style>
 
 <div class="example-wrapper">
-    This friendly message is coming from:
+    <table style="width:100%">
+            <tr>
+                    <th>ID:</th>
+                    <th>Organization:</th>
+                    <th>Repository:</th>
+                    <th>Provider:</th>
+                    <th>Trust Points:</th>
+                    <th>Creation Date:</th>
+            </tr>
 
-    {% for repository in repositories %}
-        <div>{{ repository.getReponame }} </div>
-    {% endfor %}
+            {% for repository in repositories %}
+            <tr>
+                <td> {{ repository.getId }} </td>
+                <td> {{ repository.getOrgname }} </td>
+                <td> {{ repository.getReponame }} </td>
+                <td> {{ repository.getProvider }} </td>
+                <td> {{ repository.getTrustpoints }} </td>
+                <td>{{ repository.getCreationdate|date("m.d.Y") }}</td>
+            </tr>
+
+            {% endfor %}
+    </table>
 </div>
 {% endblock %}
