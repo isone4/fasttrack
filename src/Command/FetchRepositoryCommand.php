@@ -40,8 +40,7 @@ class FetchRepositoryCommand extends Command
         $output->writeln($input->getArgument('organizationName'));
         $output->writeln($input->getArgument('providerName'));
 
-        $this->httpClient->request('GET', "https://api.github.com/orgs/$orgname/repos?per_page=100");
-
+//        $this->httpClient->request('GET', "https://api.github.com/orgs/$orgname/repos?per_page=100");
         $response = $this->httpClient->request('GET', "https://api.github.com/orgs/$orgname/repos?per_page=100");
 
         $fetchedData = $response->toArray();
@@ -52,6 +51,12 @@ class FetchRepositoryCommand extends Command
             if ($codeRepo) {
                 continue;
             }
+            $contributors = $this->httpClient->request('GET', ($item['contributors_url']))->toArray();
+
+            $contributions = 0;
+            foreach($contributors as $contributor) {
+                $contributions = $contributions + $contributor['contributions'];
+            }
             $codeRepo = new CodeRepo(
                 (string) $item['id'],
                 $orgname,
@@ -61,7 +66,7 @@ class FetchRepositoryCommand extends Command
                 new \DateTimeImmutable($item['created_at']),
                 $item['stargazers_count'],
                 $item['open_issues_count'],
-                16
+                $contributions
             );
             $this->entityManager->persist($codeRepo);
             $counter++;
