@@ -43,8 +43,8 @@
                 <td> {{ repository.getOrgname }} </td>
                 <td> <a href="{{ repository.getUrl }}" target="_blank"> {{ repository.getReponame }} </a></td>
                 <td> {{ repository.getProvider }} </td>
-                <td> {{ repository.getTrustpoints }} </td>
-                <td> {{ repository.getCreationdate|date("m.d.Y") }}</td>
+                <td> {{ repository.getContributions + (repository.getPullr * 1.2) + (repository.getStargazers * 2) }} </td>
+                <td> {{ repository.getCreationdate|date("Y.m.d") }}</td>
             </tr>
 
             {% endfor %}

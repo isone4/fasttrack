@@ -30,7 +30,7 @@ class CodeRepo
     /**
      * @ORM\Column(type="integer")
      */
-    private $trustpoints = 0;
+    private $stargazers;
 
     /**
      * @ORM\Column(type="string", length=255)
@@ -52,13 +52,26 @@ class CodeRepo
      */
     private $externalId;
 
+    /**
+     * @ORM\Column(type="integer")
+     */
+    private $pullr = 0;
+
+    /**
+     * @ORM\Column(type="integer")
+     */
+    private $contributions = 0;
+
     public function __construct(
         string $externalId,
         string $orgname,
         string $reponame,
         string $url,
         string $provider,
-        \DateTimeImmutable $creationdate
+        \DateTimeImmutable $creationdate,
+        int $stargazers,
+        int $pullr,
+        int $contributions
     ) {
         $this->externalId = $externalId;
         $this->orgname = $orgname;
@@ -66,6 +79,9 @@ class CodeRepo
         $this->url = $url;
         $this->provider = $provider;
         $this->creationdate = $creationdate;
+        $this->stargazers = $stargazers;
+        $this->pullr = $pullr;
+        $this->contributions = $contributions;
     }
 
     public function getId(): ?int
@@ -97,14 +113,14 @@ class CodeRepo
         return $this;
     }
 
-    public function getTrustpoints(): ?int
+    public function getStargazers(): ?int
     {
-        return $this->trustpoints;
+        return $this->stargazers;
     }
 
-    public function setTrustpoints(int $trustpoints): self
+    public function setStargazers(int $stargazers): self
     {
-        $this->trustpoints = $trustpoints;
+        $this->stargazers = $stargazers;
 
         return $this;
     }
@@ -153,6 +169,30 @@ class CodeRepo
     public function setExternalId(string $externalId): self
     {
         $this->externalId = $externalId;
+
+        return $this;
+    }
+
+    public function getPullr(): ?int
+    {
+        return $this->pullr;
+    }
+
+    public function setPullr(int $pullr): self
+    {
+        $this->pullr = $pullr;
+
+        return $this;
+    }
+
+    public function getContributions(): ?int
+    {
+        return $this->contributions;
+    }
+
+    public function setContributions(int $contributions): self
+    {
+        $this->contributions = $contributions;
 
         return $this;
     }
