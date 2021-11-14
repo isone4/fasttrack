@@ -57,6 +57,9 @@ class FetchRepositoryCommand extends Command
             foreach($contributors as $contributor) {
                 $contributions = $contributions + $contributor['contributions'];
             }
+
+            $trust = $contributions + ($item['open_issues_count'] * 1.2) + ($item['stargazers_count'] * 2);
+
             $codeRepo = new CodeRepo(
                 (string) $item['id'],
                 $orgname,
@@ -66,11 +69,16 @@ class FetchRepositoryCommand extends Command
                 new \DateTimeImmutable($item['created_at']),
                 $item['stargazers_count'],
                 $item['open_issues_count'],
-                $contributions
+                $contributions,
+                $trust
             );
             $this->entityManager->persist($codeRepo);
             $counter++;
         }
+
+
+
+
 
         $this->entityManager->flush();
         $output->writeln('We have saved '.$counter.' new elements');

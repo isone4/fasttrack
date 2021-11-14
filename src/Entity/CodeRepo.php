@@ -62,6 +62,11 @@ class CodeRepo
      */
     private $contributions = 0;
 
+    /**
+     * @ORM\Column(type="float")
+     */
+    private $trust = 0;
+
     public function __construct(
         string $externalId,
         string $orgname,
@@ -71,7 +76,8 @@ class CodeRepo
         \DateTimeImmutable $creationdate,
         int $stargazers,
         int $pullr,
-        int $contributions
+        int $contributions,
+        float $trust
     ) {
         $this->externalId = $externalId;
         $this->orgname = $orgname;
@@ -82,6 +88,7 @@ class CodeRepo
         $this->stargazers = $stargazers;
         $this->pullr = $pullr;
         $this->contributions = $contributions;
+        $this->trust = $trust;
     }
 
     public function getId(): ?int
@@ -193,6 +200,18 @@ class CodeRepo
     public function setContributions(int $contributions): self
     {
         $this->contributions = $contributions;
+
+        return $this;
+    }
+
+    public function getTrust(): ?float
+    {
+        return $this->trust;
+    }
+
+    public function setTrust(float $trust): self
+    {
+        $this->trust = $trust;
 
         return $this;
     }
