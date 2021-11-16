@@ -40,8 +40,7 @@ class FetchRepositoryCommand extends Command
         $output->writeln($input->getArgument('organizationName'));
         $output->writeln($input->getArgument('providerName'));
 
-        $this->httpClient->request('GET', "https://api.github.com/orgs/$orgname/repos?per_page=100");
-        $response = $this->httpClient->request('GET', "https://api.github.com/orgs/$orgname/repos?page=1");
+        $response = $this->httpClient->request('GET', "https://api.github.com/orgs/$orgname/repos?page=1&per_page=100");
 
         $headerlinks = $this->fetchLinksFromHeader($response->getHeaders());
 

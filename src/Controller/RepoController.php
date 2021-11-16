@@ -19,7 +19,7 @@ class RepoController extends AbstractController
         $this->entityManager = $entityManager;
     }
 
-    #[Route('/repo', name: 'repo')]
+    #[Route('/', name: 'repo')]
     public function index(): Response
     {
         $repositories = $this->entityManager->getRepository(CodeRepo::class)->findBy([], ['creationdate' => 'DESC']);
