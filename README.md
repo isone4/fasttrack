@@ -28,4 +28,4 @@ If it succeeds a message will be returned with the number of elements that have 
 
 To access the fetched repositories, open your browser and go to:
 
-```localhost:8080/repo```
+```localhost:8080```
