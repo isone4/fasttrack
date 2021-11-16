@@ -40,8 +40,9 @@ class FetchRepositoryCommand extends Command
         $output->writeln($input->getArgument('organizationName'));
         $output->writeln($input->getArgument('providerName'));
 
-//        $this->httpClient->request('GET', "https://api.github.com/orgs/$orgname/repos?per_page=100");
-        $response = $this->httpClient->request('GET', "https://api.github.com/orgs/$orgname/repos?per_page=100");
+        $response = $this->httpClient->request('GET', "https://api.github.com/orgs/$orgname/repos?page=1");
+
+        $header = $response->getHeaders();
 
         $fetchedData = $response->toArray();
 
@@ -53,9 +54,8 @@ class FetchRepositoryCommand extends Command
             }
             $contributors = $this->httpClient->request('GET', ($item['contributors_url']))->toArray();
 
-            $contributions = 0;
             foreach($contributors as $contributor) {
-                $contributions = $contributions + $contributor['contributions'];
+                $contributions = $contributor['contributions'];
             }
 
             $trust = $contributions + ($item['open_issues_count'] * 1.2) + ($item['stargazers_count'] * 2);
@@ -76,15 +76,92 @@ class FetchRepositoryCommand extends Command
             $counter++;
         }
 
+        $this->entityManager->flush();
 
 
 
+
+        $headerlinks = $this->fetchLinksFromHeader($header);
+
+        $response = $this->httpClient->request('GET', ($headerlinks['next']));
+
+        $fetchedData = $response->toArray();
+
+        foreach($fetchedData as $item) {
+            $codeRepo = $this->entityManager->getRepository(CodeRepo::class)->findOneBy(['externalId'=>$item['id']]);
+            if ($codeRepo) {
+                continue;
+            }
+            $contributors = $this->httpClient->request('GET', ($item['contributors_url']))->toArray();
+
+            foreach($contributors as $contributor) {
+                $contributions = $contributor['contributions'];
+            }
+
+            $trust = $contributions + ($item['open_issues_count'] * 1.2) + ($item['stargazers_count'] * 2);
+
+            $codeRepo = new CodeRepo(
+                (string) $item['id'],
+                $orgname,
+                $item['name'],
+                $item['html_url'],
+                'github',
+                new \DateTimeImmutable($item['created_at']),
+                $item['stargazers_count'],
+                $item['open_issues_count'],
+                $contributions,
+                $trust
+            );
+            $this->entityManager->persist($codeRepo);
+            $counter++;
+        }
 
         $this->entityManager->flush();
         $output->writeln('We have saved '.$counter.' new elements');
 
         return Command::SUCCESS;
+
+//        dump($headerlinks);die;
+
+
+//        while(isset($headerlinks['next'])) {
+//
+//            if(isset($headerlinks['next'])) {
+//                break;
+//            }
+//
+//        }
+////        dump($headerlinks['next']);die;
+
+
+
+//        $header = $response->getHeaders();
+//        dump($header);die;
+
+
     }
+
+    private function fetchLinksFromHeader(array $header): array
+    {
+        if(!isset($header['link'])) {
+            return [];
+        }
+        $explodedlinks = explode(",", ($header['link'][0]));
+        $headerlinks = [];
+        foreach($explodedlinks as $explodedlink) {
+            $explodedlink = trim($explodedlink);
+            $beginning = strpos($explodedlink, '<')+1;
+            $end = strpos($explodedlink, '>')-1;
+            $url = substr($explodedlink, $beginning, $end);
+
+            $linktype = strpos($explodedlink, 'rel=')+5;
+            $type = substr($explodedlink, $linktype, -1);
+            $headerlinks[$type] = $url;
+        }
+        return $headerlinks;
+    }
+
+//    private function repoCode(array )
 
     protected function configure()
     {

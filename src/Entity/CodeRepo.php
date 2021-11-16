@@ -60,7 +60,7 @@ class CodeRepo
     /**
      * @ORM\Column(type="integer")
      */
-    private $contributions = 0;
+    private $contributions;
 
     /**
      * @ORM\Column(type="float")
