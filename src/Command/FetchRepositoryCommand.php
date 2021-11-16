@@ -76,46 +76,43 @@ class FetchRepositoryCommand extends Command
             $counter++;
         }
 
-        $this->entityManager->flush();
+//        $this->entityManager->flush();
 
+        do {
+            $headerlinks = $this->fetchLinksFromHeader($header);
+            $response = $this->httpClient->request('GET', ($headerlinks['next']));
+            $fetchedData = $response->toArray();
+            foreach ($fetchedData as $item) {
+                $codeRepo = $this->entityManager->getRepository(CodeRepo::class)->findOneBy(['externalId' => $item['id']]);
+                if ($codeRepo) {
+                    continue;
+                }
+                $contributors = $this->httpClient->request('GET', ($item['contributors_url']))->toArray();
 
+                foreach ($contributors as $contributor) {
+                    $contributions = $contributor['contributions'];
+                }
 
+                $trust = $contributions + ($item['open_issues_count'] * 1.2) + ($item['stargazers_count'] * 2);
 
-        $headerlinks = $this->fetchLinksFromHeader($header);
-
-        $response = $this->httpClient->request('GET', ($headerlinks['next']));
-
-        $fetchedData = $response->toArray();
-
-        foreach($fetchedData as $item) {
-            $codeRepo = $this->entityManager->getRepository(CodeRepo::class)->findOneBy(['externalId'=>$item['id']]);
-            if ($codeRepo) {
-                continue;
+                $codeRepo = new CodeRepo(
+                    (string)$item['id'],
+                    $orgname,
+                    $item['name'],
+                    $item['html_url'],
+                    'github',
+                    new \DateTimeImmutable($item['created_at']),
+                    $item['stargazers_count'],
+                    $item['open_issues_count'],
+                    $contributions,
+                    $trust
+                );
+                $this->entityManager->persist($codeRepo);
+                $counter++;
             }
-            $contributors = $this->httpClient->request('GET', ($item['contributors_url']))->toArray();
 
-            foreach($contributors as $contributor) {
-                $contributions = $contributor['contributions'];
-            }
-
-            $trust = $contributions + ($item['open_issues_count'] * 1.2) + ($item['stargazers_count'] * 2);
-
-            $codeRepo = new CodeRepo(
-                (string) $item['id'],
-                $orgname,
-                $item['name'],
-                $item['html_url'],
-                'github',
-                new \DateTimeImmutable($item['created_at']),
-                $item['stargazers_count'],
-                $item['open_issues_count'],
-                $contributions,
-                $trust
-            );
-            $this->entityManager->persist($codeRepo);
-            $counter++;
-        }
-
+//            $this->entityManager->flush();
+        } while (isset($headerlinks['next']));
         $this->entityManager->flush();
         $output->writeln('We have saved '.$counter.' new elements');
 
