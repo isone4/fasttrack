@@ -15,20 +15,10 @@ class BitbucketCodeRepositoryProvider implements Provider
     /**
      * @return CodeRepository[]
      */
-
         public function fetch(FetchCriteria $criteria): iterable
-//        {
-//            if ($name->providerName !== self::NAME) {
-//                return [];
-//            }
         {
             $response = $this->httpClient->request('GET', "https://api.bitbucket.org/2.0/repositories/$criteria->organizationName?page=1&per_page=100");
             $codeRepositories = $this->buildCodeRepositories($response->toArray(), $criteria, []);
-            while(isset($codeRepositories['next'])) {
-                $response = $this->httpClient->request('GET', $codeRepositories['next']);
-                $codeRepositories = $this->buildCodeRepositories($response->toArray(), $criteria, $codeRepositories);
-            }
-
             return $codeRepositories;
         }
 
@@ -45,12 +35,14 @@ class BitbucketCodeRepositoryProvider implements Provider
                 $date = new \DateTimeImmutable($item['created_on']);
                 $contributorsArray = $this->httpClient->request('GET', $item['links']['commits']['href'])->toArray();
                 $contributions = count($contributorsArray['values']);
+                $next = $contributorsArray['next'] ?? '';
+                while($next) {
+                    $contributorsNextPage = $this->httpClient->request('GET', $next)->toArray();
+                    $contributions += count($contributorsNextPage['values']);
+                    $next = $contributorsNextPage['next'] ?? '';
+                }
                 $openIssuesArray = $this->httpClient->request('GET', $item['links']['pullrequests']['href'])->toArray();
                 $openIssues = count($openIssuesArray['values']);
-
-                $nextPage = $fetchedData['next'];
-                if(!isset($nextPage))
-
                 $codeRepositories[] = new CodeRepository(
                     externalId: (string)$item['uuid'],
                     orgname: $criteria->organizationName,
@@ -65,6 +57,4 @@ class BitbucketCodeRepositoryProvider implements Provider
             }
             return $codeRepositories;
         }
-
-//    private function nextPage()
 }

@@ -18,6 +18,11 @@ final class GithubCodeRepositoryProvider implements Provider
       */
        public function fetch(FetchCriteria $criteria): iterable
        {
+
+//           $commitsLinks = $this->httpClient->request('GET', "https://api.github.com/repos/allegro/ralph/contributors");
+//           $commitsNext = $this->fetchLinksFromHeader($commitsLinks->getHeaders());
+//           dump($commitsNext);die;
+
            $response = $this->httpClient->request('GET', "https://api.github.com/orgs/$criteria->organizationName/repos?page=1&per_page=100");
            $headerlinks = $this->fetchLinksFromHeader($response->getHeaders());
 
@@ -69,8 +74,12 @@ final class GithubCodeRepositoryProvider implements Provider
         foreach ($fetchedData as $item) {
 
             $contributorsArray = $this->httpClient->request('GET', $item['contributors_url'])->toArray();
+//            $headerCommits = $this->fetchLinksFromHeader($contributorsArray->getHeaders());
+
+//            dump($contributorsArray);die;
             $contributorsArray = array_map(static fn(array $contributor) => $contributor['contributions'], $contributorsArray);
             $contributions = array_sum($contributorsArray);
+//            dump($item['contributors_url']);die;
 
             $codeRepositories[] = new CodeRepository(
                 externalId: (string)$item['id'],
@@ -87,4 +96,9 @@ final class GithubCodeRepositoryProvider implements Provider
 
         return $codeRepositories;
     }
+
+//    private function fetchCommitsNextPage(array $headerCommits): array
+//    {
+//
+//    }
 }
