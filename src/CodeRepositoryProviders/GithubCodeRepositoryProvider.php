@@ -67,6 +67,7 @@ final class GithubCodeRepositoryProvider implements Provider
     private function buildCodeRepositories(array $fetchedData, FetchCriteria $criteria, array $codeRepositories): array
     {
         foreach ($fetchedData as $item) {
+
             $contributorsArray = $this->httpClient->request('GET', $item['contributors_url'])->toArray();
             $contributorsArray = array_map(static fn(array $contributor) => $contributor['contributions'], $contributorsArray);
             $contributions = array_sum($contributorsArray);
