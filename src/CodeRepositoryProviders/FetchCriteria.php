@@ -6,7 +6,7 @@ namespace App\CodeRepositoryProviders;
 
 class FetchCriteria
 {
-    public function __construct(public readonly string $organizationName, public readonly string $providerName)
+    public function __construct(public readonly string $organizationName, public readonly string $providerName, public $accessKey)
     {
     }
 }
