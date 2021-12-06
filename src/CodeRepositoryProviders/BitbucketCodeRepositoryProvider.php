@@ -18,7 +18,13 @@ class BitbucketCodeRepositoryProvider implements Provider
         public function fetch(FetchCriteria $criteria): iterable
         {
             $response = $this->httpClient->request('GET', "https://api.bitbucket.org/2.0/repositories/$criteria->organizationName?page=1&per_page=100");
+            $nextPage = $response['next'];
             $codeRepositories = $this->buildCodeRepositories($response->toArray(), $criteria, []);
+            while (isset($nextPage)) {
+                $response = $this->httpClient->request('GET', "$nextPage");
+                $nextPage = $response['next'];
+                $codeRepositories = $this->buildCodeRepositories($response->toArray(), $criteria, $codeRepositories);
+            }
             return $codeRepositories;
         }
 
@@ -35,16 +41,21 @@ class BitbucketCodeRepositoryProvider implements Provider
             foreach ($fetchedData['values'] as $item) {
                 $date = new \DateTimeImmutable($item['created_on']);
                 $contributorsArray = $this->httpClient->request('GET', $item['links']['commits']['href'])->toArray();
-//                dump($contributorsArray['values']['0']['links']);die;
                 $contributions = count($contributorsArray['values']);
-                $next = $contributorsArray['next'] ?? '';
-                while($next) {
-                    $contributorsNextPage = $this->httpClient->request('GET', $next)->toArray();
+                $contributionsNext = $contributorsArray['next'] ?? '';
+                while($contributionsNext) {
+                    $contributorsNextPage = $this->httpClient->request('GET', $contributionsNext)->toArray();
                     $contributions += count($contributorsNextPage['values']);
-                    $next = $contributorsNextPage['next'] ?? '';
+                    $contributionsNext = $contributorsNextPage['next'] ?? '';
                 }
                 $openIssuesArray = $this->httpClient->request('GET', $item['links']['pullrequests']['href'])->toArray();
                 $openIssues = count($openIssuesArray['values']);
+                $issuesNext = $openIssues['next'] ?? '';
+                while($issuesNext) {
+                    $issuesNextPage = $this->httpClient->request('GET', $issuesNext)->toArray();
+                    $openIssues += count($issuesNextPage['values']);
+                    $issuesNext = $issuesNextPage['next'] ?? '';
+                }
                 $codeRepositories[] = new CodeRepository(
                     externalId: (string)$item['uuid'],
                     orgname: $criteria->organizationName,

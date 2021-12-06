@@ -18,20 +18,12 @@ final class GithubCodeRepositoryProvider implements Provider
       */
        public function fetch(FetchCriteria $criteria): iterable
        {
-
-//           $commitsLinks = $this->httpClient->request('GET', "https://api.github.com/repos/allegro/ralph/contributors");
-//           $commitsNext = $this->fetchLinksFromHeader($commitsLinks->getHeaders());
-//           dump($commitsNext);die;
-
            $response = $this->httpClient->request('GET', "https://api.github.com/orgs/$criteria->organizationName/repos?page=1&per_page=100");
            $headerlinks = $this->fetchLinksFromHeader($response->getHeaders());
-
            $codeRepositories = $this->buildCodeRepositories($response->toArray(), $criteria, []);
-
            while (isset($headerlinks['next'])) {
                $response = $this->httpClient->request('GET', $headerlinks['next']);
                $headerlinks = $this->fetchLinksFromHeader($response->getHeaders());
-
                $codeRepositories = $this->buildCodeRepositories($response->toArray(), $criteria, $codeRepositories);
            }
 
@@ -50,7 +42,6 @@ final class GithubCodeRepositoryProvider implements Provider
             $beginning = strpos($explodedlink, '<') + 1;
             $end = strpos($explodedlink, '>') - 1;
             $url = substr($explodedlink, $beginning, $end);
-
             $linktype = strpos($explodedlink, 'rel=') + 5;
             $type = substr($explodedlink, $linktype, -1);
             $headerlinks[$type] = $url;
