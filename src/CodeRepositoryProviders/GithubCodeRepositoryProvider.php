@@ -64,13 +64,18 @@ final class GithubCodeRepositoryProvider implements Provider
     {
         foreach ($fetchedData as $item) {
 
-            $contributorsArray = $this->httpClient->request('GET', $item['contributors_url'])->toArray();
-//            $headerCommits = $this->fetchLinksFromHeader($contributorsArray->getHeaders());
-
-//            dump($contributorsArray);die;
-            $contributorsArray = array_map(static fn(array $contributor) => $contributor['contributions'], $contributorsArray);
-            $contributions = array_sum($contributorsArray);
-//            dump($item['contributors_url']);die;
+            $contributorsArray = $this->httpClient->request('GET', $item['contributors_url']);
+            $headerCommits = $this->fetchLinksFromHeader($contributorsArray->getHeaders());
+            $contribubons = $contributorsArray->toArray();
+            $contribubons = array_map(static fn(array $contributor) => $contributor['contributions'], $contribubons);
+            $contributions = array_sum($contribubons);
+            while(isset($headerCommits['next'])) {
+                $headerCommitsNext = $this->httpClient->request('GET', $headerCommits['next']);
+                $headerArray = $headerCommitsNext->toArray();
+                $headerArray = array_map(static fn(array $contributor) => $contributor['contributions'], $headerArray);
+                $contributions += array_sum($headerArray);
+                $headerCommits = $headerCommits['next'] ??'';
+            }
 
             $codeRepositories[] = new CodeRepository(
                 externalId: (string)$item['id'],
@@ -87,9 +92,4 @@ final class GithubCodeRepositoryProvider implements Provider
 
         return $codeRepositories;
     }
-
-//    private function fetchCommitsNextPage(array $headerCommits): array
-//    {
-//
-//    }
 }
