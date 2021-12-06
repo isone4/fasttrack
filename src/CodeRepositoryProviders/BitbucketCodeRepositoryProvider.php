@@ -28,12 +28,14 @@ class BitbucketCodeRepositoryProvider implements Provider
      * @throws \Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface
+     * @throws \Exception
      */
     private function buildCodeRepositories(array $fetchedData, FetchCriteria $criteria, array $codeRepositories): array
         {
             foreach ($fetchedData['values'] as $item) {
                 $date = new \DateTimeImmutable($item['created_on']);
                 $contributorsArray = $this->httpClient->request('GET', $item['links']['commits']['href'])->toArray();
+//                dump($contributorsArray['values']['0']['links']);die;
                 $contributions = count($contributorsArray['values']);
                 $next = $contributorsArray['next'] ?? '';
                 while($next) {
