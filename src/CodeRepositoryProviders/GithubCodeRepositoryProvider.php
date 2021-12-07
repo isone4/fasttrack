@@ -6,6 +6,7 @@ namespace App\CodeRepositoryProviders;
 
 use DateTimeImmutable;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 
 final class GithubCodeRepositoryProvider implements Provider
 {
