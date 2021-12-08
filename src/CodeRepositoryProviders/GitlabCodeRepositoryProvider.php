@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\CodeRepositoryProviders;
 
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class GitlabCodeRepositoryProvider implements Provider
@@ -48,17 +49,20 @@ class GitlabCodeRepositoryProvider implements Provider
             foreach ($fetchedData as $item) {
                 $date = new \DateTimeImmutable($item['created_at']);
                 $commitsId = $item['id'];
-                $commitsArray = $this->httpClient->request('GET', "https://gitlab.com/api/v4/projects/$commitsId/repository/contributors?private_token=$criteria->accessKey&page=1&per_page=100");
-                $headerCommits = $this->fetchLinksFromHeader($commitsArray->getHeaders());
+                $commitsArray = $this->httpClient->request('GET', "https://gitlab.com/api/v4/projects/$commitsId/repository/commits?page=1&per_page=100");
+                if ($commitsArray->getStatusCode() === Response::HTTP_NOT_FOUND) {
+                    continue;
+                }
+                $commitsHeader = $this->fetchLinksFromHeader($commitsArray->getHeaders());
                 $commitsArray = $commitsArray->toArray();
-                $commitsArray = array_map(static fn($contributor) => $contributor['commits'], $commitsArray);
-                $commitsNumber = array_sum($commitsArray);
-                while(isset($headerCommits['next'])) {
-                    $headerCommitsNext = $this->httpClient->request('GET', $headerCommits['next']);
-                    $headerArray = $headerCommitsNext->toArray();
-                    $headerArray = array_map(static fn(array $contributor) => $contributor['contributions'], $headerArray);
-                    $contributions += array_sum($headerArray);
-                    $headerCommits = $headerCommits['next'] ??'';
+                $contributions = count($commitsArray);
+                $commitsHeaderNext = $commitsHeader['next'] ?? '';
+                while($commitsHeaderNext) {
+                    $commitsNextPage = $this->httpClient->request('GET', $commitsHeaderNext);
+                    $commitsHeaderLinks = $this->fetchLinksFromHeader($commitsNextPage->getHeaders());
+                    $commitsNextPage = $commitsNextPage->toArray();
+                    $contributions += count($commitsNextPage);
+                    $commitsHeaderNext = $commitsHeaderLinks['next'] ?? '';
                 }
                 $openIssues = $item['open_issues_count'] ?? '';
                 $codeRepositories[] = new CodeRepository(
@@ -70,7 +74,7 @@ class GitlabCodeRepositoryProvider implements Provider
                     creationdate: $date,
                     stargazers: $item['star_count'],
                     openIssuesNumber: (int)$openIssues,
-                    contributionsNumber: $commitsNumber
+                    contributionsNumber: $contributions
                 );
             }
             return $codeRepositories;

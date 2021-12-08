@@ -5,13 +5,14 @@ declare(strict_types = 1);
 namespace App\CodeRepositoryProviders;
 
 use DateTimeImmutable;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final class GithubCodeRepositoryProvider implements Provider
 {
      public function __construct(private HttpClientInterface $httpClient)
      {
+
      }
 
     /**
@@ -52,18 +53,20 @@ final class GithubCodeRepositoryProvider implements Provider
     private function buildCodeRepositories(array $fetchedData, FetchCriteria $criteria, array $codeRepositories): array
     {
         foreach ($fetchedData as $item) {
-
-            $contributorsArray = $this->httpClient->request('GET', $item['contributors_url']);
-            $headerCommits = $this->fetchLinksFromHeader($contributorsArray->getHeaders());
-            $contribubons = $contributorsArray->toArray();
-            $contribubons = array_map(static fn(array $contributor) => $contributor['contributions'], $contribubons);
-            $contributions = array_sum($contribubons);
-            while(isset($headerCommits['next'])) {
-                $headerCommitsNext = $this->httpClient->request('GET', $headerCommits['next']);
-                $headerArray = $headerCommitsNext->toArray();
-                $headerArray = array_map(static fn(array $contributor) => $contributor['contributions'], $headerArray);
+            $contributorsUrl = $item['contributors_url'];
+            $contributorsArray = $this->httpClient->request('GET', "$contributorsUrl?page=1&per_page=100");
+            $contributorsHeader = $this->fetchLinksFromHeader($contributorsArray->getHeaders());
+//            $commitsArray = $contributorsArray->toArray();
+            $commitsArray = array_map(static fn(array $contributor) => $contributor['contributions'], (array)$contributorsArray);
+            $contributions = array_sum($commitsArray);
+            $commitsNext = $contributorsHeader['next'] ?? '';
+            while($commitsNext) {
+                $headerCommitsNext = $this->httpClient->request('GET', $contributorsHeader['next']);
+                $commitsHeader = $this->fetchLinksFromHeader($headerCommitsNext->getHeaders());
+//                $headerArray = $headerCommitsNext->toArray();
+                $headerArray = array_map(static fn(array $contributor) => $contributor['contributions'], (array)$headerCommitsNext);
                 $contributions += array_sum($headerArray);
-                $headerCommits = $headerCommits['next'] ??'';
+                $contributorsHeader = $commitsHeader['next'] ?? '';
             }
 
             $codeRepositories[] = new CodeRepository(
@@ -78,7 +81,6 @@ final class GithubCodeRepositoryProvider implements Provider
                 contributionsNumber: $contributions
             );
         }
-
         return $codeRepositories;
     }
 }

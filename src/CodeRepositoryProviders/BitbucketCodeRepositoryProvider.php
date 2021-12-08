@@ -18,9 +18,9 @@ class BitbucketCodeRepositoryProvider implements Provider
         public function fetch(FetchCriteria $criteria): iterable
         {
             $response = $this->httpClient->request('GET', "https://api.bitbucket.org/2.0/repositories/$criteria->organizationName?page=1&per_page=100");
-            $nextPage = $response['next'];
+            $nextPage = $response->toArray();
             $codeRepositories = $this->buildCodeRepositories($response->toArray(), $criteria, []);
-            while (isset($nextPage)) {
+            while (isset($nextPage['next'])) {
                 $response = $this->httpClient->request('GET', "$nextPage");
                 $nextPage = $response['next'];
                 $codeRepositories = $this->buildCodeRepositories($response->toArray(), $criteria, $codeRepositories);
