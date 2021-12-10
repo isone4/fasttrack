@@ -30,4 +30,10 @@ services:
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
 
-    App\CodeRepositoryProviders\Provider: '@App\CodeRepositoryProviders\GitlabCodeRepositoryProvider'
+    App\CodeRepositoryProviders\ProviderSelection:
+        calls:
+            - ['registerProvider', ['github', '@App\CodeRepositoryProviders\GithubCodeRepositoryProvider']]
+            - ['registerProvider', ['gitlab', '@App\CodeRepositoryProviders\GitlabCodeRepositoryProvider']]
+            - ['registerProvider', ['bitbucket', '@App\CodeRepositoryProviders\BitbucketCodeRepositoryProvider']]
+
+    App\CodeRepositoryProviders\Provider: '@App\CodeRepositoryProviders\ProviderSelection'

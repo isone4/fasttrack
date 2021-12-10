@@ -31,21 +31,8 @@ class GitlabCodeRepositoryProvider implements Provider
 
     private function fetchLinksFromHeader(array $header): array
     {
-        if (!isset($header['link'])) {
-            return [];
-        }
-        $explodedlinks = explode(",", ($header['link']['0']));
-        $headerlinks = [];
-        foreach ($explodedlinks as $explodedlink) {
-            $explodedlink = trim($explodedlink);
-            $beginning = strpos($explodedlink, '<') + 1;
-            $end = strpos($explodedlink, '>') - 1;
-            $url = substr($explodedlink, $beginning, $end);
-            $linktype = strpos($explodedlink, 'rel=') + 5;
-            $type = substr($explodedlink, $linktype, -1);
-            $headerlinks[$type] = $url;
-        }
-        return $headerlinks;
+        $headerLinksParser = new HeaderLinksParser($header);
+        return $headerLinksParser->headerLinks();
     }
 
     /**
@@ -61,9 +48,18 @@ class GitlabCodeRepositoryProvider implements Provider
             foreach ($fetchedData as $item) {
                 $date = new \DateTimeImmutable($item['created_at']);
                 $commitsId = $item['id'];
-                $commitsArray = $this->httpClient->request('GET', "https://gitlab.com/api/v4/projects/$commitsId/repository/contributors?private_token=$criteria->accessKey&page=1&per_page=100")->toArray();
+                $commitsArray = $this->httpClient->request('GET', "https://gitlab.com/api/v4/projects/$commitsId/repository/contributors?private_token=$criteria->accessKey&page=1&per_page=100");
+                $headerCommits = $this->fetchLinksFromHeader($commitsArray->getHeaders());
+                $commitsArray = $commitsArray->toArray();
                 $commitsArray = array_map(static fn($contributor) => $contributor['commits'], $commitsArray);
                 $commitsNumber = array_sum($commitsArray);
+                while(isset($headerCommits['next'])) {
+                    $headerCommitsNext = $this->httpClient->request('GET', $headerCommits['next']);
+                    $headerArray = $headerCommitsNext->toArray();
+                    $headerArray = array_map(static fn(array $contributor) => $contributor['contributions'], $headerArray);
+                    $contributions += array_sum($headerArray);
+                    $headerCommits = $headerCommits['next'] ??'';
+                }
                 $openIssues = $item['open_issues_count'] ?? '';
                 $codeRepositories[] = new CodeRepository(
                     externalId: (string)$item['id'],

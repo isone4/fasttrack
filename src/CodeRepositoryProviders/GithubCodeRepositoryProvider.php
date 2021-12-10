@@ -13,9 +13,10 @@ final class GithubCodeRepositoryProvider implements Provider
      {
      }
 
-     /**
-      * @return CodeRepository[]
-      */
+    /**
+     * @return CodeRepository[]
+     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     */
        public function fetch(FetchCriteria $criteria): iterable
        {
            $response = $this->httpClient->request('GET', "https://api.github.com/orgs/$criteria->organizationName/repos?page=1&per_page=100");
@@ -32,21 +33,8 @@ final class GithubCodeRepositoryProvider implements Provider
 
     private function fetchLinksFromHeader(array $header): array
     {
-        if (!isset($header['link'])) {
-            return [];
-        }
-        $explodedlinks = explode(",", ($header['link'][0]));
-        $headerlinks = [];
-        foreach ($explodedlinks as $explodedlink) {
-            $explodedlink = trim($explodedlink);
-            $beginning = strpos($explodedlink, '<') + 1;
-            $end = strpos($explodedlink, '>') - 1;
-            $url = substr($explodedlink, $beginning, $end);
-            $linktype = strpos($explodedlink, 'rel=') + 5;
-            $type = substr($explodedlink, $linktype, -1);
-            $headerlinks[$type] = $url;
-        }
-        return $headerlinks;
+        $headerLinksParser = new HeaderLinksParser($header);
+        return $headerLinksParser->headerLinks();
     }
 
     /**
