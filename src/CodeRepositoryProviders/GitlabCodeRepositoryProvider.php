@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\CodeRepositoryProviders;
 
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class GitlabCodeRepositoryProvider implements Provider

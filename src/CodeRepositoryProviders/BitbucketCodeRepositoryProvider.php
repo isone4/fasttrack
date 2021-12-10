@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\CodeRepositoryProviders;
 
+use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class BitbucketCodeRepositoryProvider implements Provider
 {
-    public function __construct(private HttpClientInterface $httpClient)
+    public function __construct(private HttpClientInterface $httpClient, private RateLimiterFactory $anonymousApiLimiter)
     {
     }
 
@@ -17,13 +19,13 @@ class BitbucketCodeRepositoryProvider implements Provider
      */
         public function fetch(FetchCriteria $criteria): iterable
         {
-            $response = $this->httpClient->request('GET', "https://api.bitbucket.org/2.0/repositories/$criteria->organizationName?page=1&per_page=100");
-            $nextPage = $response->toArray();
-            $codeRepositories = $this->buildCodeRepositories($response->toArray(), $criteria, []);
+            $responseArray = $this->request($criteria->providerName, "https://api.bitbucket.org/2.0/repositories/$criteria->organizationName?page=1&per_page=100");
+            $nextPage = $responseArray;
+            $codeRepositories = $this->buildCodeRepositories($responseArray, $criteria, []);
             while (isset($nextPage['next'])) {
-                $response = $this->httpClient->request('GET', "$nextPage");
-                $nextPage = $response['next'];
-                $codeRepositories = $this->buildCodeRepositories($response->toArray(), $criteria, $codeRepositories);
+                $nextPageResponse = $this->request($criteria->providerName, $nextPage['next']);
+                $nextPage = $nextPageResponse;
+                $codeRepositories = $this->buildCodeRepositories($nextPageResponse, $criteria, $codeRepositories);
             }
             return $codeRepositories;
         }
@@ -40,19 +42,20 @@ class BitbucketCodeRepositoryProvider implements Provider
         {
             foreach ($fetchedData['values'] as $item) {
                 $date = new \DateTimeImmutable($item['created_on']);
-                $contributorsArray = $this->httpClient->request('GET', $item['links']['commits']['href'])->toArray();
+                $providerName = $criteria->providerName;
+                $contributorsArray = $this->request($providerName, $item['links']['commits']['href']);
                 $contributions = count($contributorsArray['values']);
                 $contributionsNext = $contributorsArray['next'] ?? '';
                 while($contributionsNext) {
-                    $contributorsNextPage = $this->httpClient->request('GET', $contributionsNext)->toArray();
+                    $contributorsNextPage = $this->request($providerName, $contributionsNext);
                     $contributions += count($contributorsNextPage['values']);
                     $contributionsNext = $contributorsNextPage['next'] ?? '';
                 }
-                $openIssuesArray = $this->httpClient->request('GET', $item['links']['pullrequests']['href'])->toArray();
+                $openIssuesArray = $this->request($providerName, $item['links']['pullrequests']['href']);
                 $openIssues = count($openIssuesArray['values']);
                 $issuesNext = $openIssues['next'] ?? '';
                 while($issuesNext) {
-                    $issuesNextPage = $this->httpClient->request('GET', $issuesNext)->toArray();
+                    $issuesNextPage = $this->request($providerName, $issuesNext);
                     $openIssues += count($issuesNextPage['values']);
                     $issuesNext = $issuesNextPage['next'] ?? '';
                 }
@@ -70,4 +73,28 @@ class BitbucketCodeRepositoryProvider implements Provider
             }
             return $codeRepositories;
         }
+
+    private function rateLimiter(string $providerName)
+    {
+        $limiter = $this->anonymousApiLimiter->create($providerName);
+        if (false === $limiter->consume(1)->isAccepted()) {
+            throw new TooManyRequestsHttpException();
+        }
+    }
+
+    /**
+     * @param string $providerName
+     * @param mixed $url
+     * @return array
+     * @throws \Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     */
+    private function request(string $providerName, mixed $url): array
+    {
+        $this->rateLimiter($providerName);
+        return $this->httpClient->request('GET', $url)->toArray();
+    }
 }
