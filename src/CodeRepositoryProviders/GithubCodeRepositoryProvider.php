@@ -20,13 +20,10 @@ final class GithubCodeRepositoryProvider implements Provider
        {
            $response = $this->httpClient->request('GET', "https://api.github.com/orgs/$criteria->organizationName/repos?page=1&per_page=100");
            $headerlinks = $this->fetchLinksFromHeader($response->getHeaders());
-
            $codeRepositories = $this->buildCodeRepositories($response->toArray(), $criteria, []);
-
            while (isset($headerlinks['next'])) {
                $response = $this->httpClient->request('GET', $headerlinks['next']);
                $headerlinks = $this->fetchLinksFromHeader($response->getHeaders());
-
                $codeRepositories = $this->buildCodeRepositories($response->toArray(), $criteria, $codeRepositories);
            }
 
@@ -45,7 +42,6 @@ final class GithubCodeRepositoryProvider implements Provider
             $beginning = strpos($explodedlink, '<') + 1;
             $end = strpos($explodedlink, '>') - 1;
             $url = substr($explodedlink, $beginning, $end);
-
             $linktype = strpos($explodedlink, 'rel=') + 5;
             $type = substr($explodedlink, $linktype, -1);
             $headerlinks[$type] = $url;
@@ -67,9 +63,19 @@ final class GithubCodeRepositoryProvider implements Provider
     private function buildCodeRepositories(array $fetchedData, FetchCriteria $criteria, array $codeRepositories): array
     {
         foreach ($fetchedData as $item) {
-            $contributorsArray = $this->httpClient->request('GET', $item['contributors_url'])->toArray();
-            $contributorsArray = array_map(static fn(array $contributor) => $contributor['contributions'], $contributorsArray);
-            $contributions = array_sum($contributorsArray);
+
+            $contributorsArray = $this->httpClient->request('GET', $item['contributors_url']);
+            $headerCommits = $this->fetchLinksFromHeader($contributorsArray->getHeaders());
+            $contribubons = $contributorsArray->toArray();
+            $contribubons = array_map(static fn(array $contributor) => $contributor['contributions'], $contribubons);
+            $contributions = array_sum($contribubons);
+            while(isset($headerCommits['next'])) {
+                $headerCommitsNext = $this->httpClient->request('GET', $headerCommits['next']);
+                $headerArray = $headerCommitsNext->toArray();
+                $headerArray = array_map(static fn(array $contributor) => $contributor['contributions'], $headerArray);
+                $contributions += array_sum($headerArray);
+                $headerCommits = $headerCommits['next'] ??'';
+            }
 
             $codeRepositories[] = new CodeRepository(
                 externalId: (string)$item['id'],
