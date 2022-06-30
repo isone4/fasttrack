@@ -4,11 +4,8 @@ declare(strict_types=1);
 
 namespace App\Command;
 
-use App\CodeRepositoryProviders\CodeRepository;
 use App\CodeRepositoryProviders\FetchCriteria;
-use App\CodeRepositoryProviders\Provider;
-use App\Entity\CodeRepo;
-use Doctrine\ORM\EntityManagerInterface;
+use App\SynchronizeRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -16,7 +13,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class FetchRepositoryCommand extends Command
 {
-    public function __construct(private Provider $provider, private EntityManagerInterface $entityManager)
+    public function __construct(private readonly SynchronizeRepository $synchronizeRepository)
     {
         parent::__construct();
     }
@@ -33,30 +30,11 @@ class FetchRepositoryCommand extends Command
         $output->writeln($input->getArgument('providerName'));
         $output->writeln($input->getArgument('accessKey'));
 
-        /**
-         * @var CodeRepository[] $codeRepositories
-         */
-        $codeRepositories = $this->provider->fetch(new FetchCriteria($orgname, $provider, $accessKey));
-
-        foreach ($codeRepositories as $repository) {
-            $trust = $repository->contributionsNumber + ($repository->openIssuesNumber * 1.2) + ($repository->stargazers * 2);
-
-            $codeRepo = new CodeRepo(
-                (string) $repository->externalId,
-                $repository->orgname,
-                $repository->reponame,
-                $repository->url,
-                $repository->provider,
-                $repository->creationdate,
-                $repository->stargazers,
-                $repository->openIssuesNumber,
-                $repository->contributionsNumber,
-                $trust
-            );
-            $this->entityManager->persist($codeRepo);
-        }
-
-        $this->entityManager->flush();
+        $this->synchronizeRepository->execute(new FetchCriteria(
+            $orgname,
+            $provider,
+            $accessKey
+        ));
 
         return Command::SUCCESS;
     }

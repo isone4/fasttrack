@@ -11,7 +11,7 @@ class HeaderLinksParser
      */
     public function __construct(array $header)
     {
-        $this->explodedLinks = explode(",", ($header['link']['0'] ?? []));
+        $this->explodedLinks = explode(",", ($header['link']['0']) ?? "");
     }
 
     public function headerLinks(): array

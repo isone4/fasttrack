@@ -2,49 +2,53 @@
 
 namespace App\Repository;
 
-use App\Entity\CodeRepo;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Entity\Criteria;
+use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 
-/**
- * @method CodeRepo|null find($id, $lockMode = null, $lockVersion = null)
- * @method CodeRepo|null findOneBy(array $criteria, array $orderBy = null)
- * @method CodeRepo[]    findAll()
- * @method CodeRepo[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
- */
-class CodeRepoRepository extends ServiceEntityRepository
+class CodeRepoRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(private ManagerRegistry $registry)
     {
-        parent::__construct($registry, CodeRepo::class);
     }
 
-    // /**
-    //  * @return CodeRepo[] Returns an array of CodeRepo objects
-    //  */
-    /*
-    public function findByExampleField($value)
+    private function connection(): Connection
     {
-        return $this->createQueryBuilder('c')
-            ->andWhere('c.exampleField = :val')
-            ->setParameter('val', $value)
-            ->orderBy('c.id', 'ASC')
-            ->setMaxResults(10)
-            ->getQuery()
-            ->getResult()
-        ;
-    }
-    */
+        /** @var Connection $connection */
+        $connection = $this->registry->getConnection();
 
-    /*
-    public function findOneBySomeField($value): ?CodeRepo
-    {
-        return $this->createQueryBuilder('c')
-            ->andWhere('c.exampleField = :val')
-            ->setParameter('val', $value)
-            ->getQuery()
-            ->getOneOrNullResult()
-        ;
+        return $connection;
     }
-    */
+
+    public function findByCriteria(Criteria $criteria): array
+    {
+        $qb = $this->connection()->createQueryBuilder()
+            ->select('*')
+            ->from('code_repo')
+
+        ;
+        $count = $qb->executeQuery()->rowCount();
+
+        if ($criteria->getSearchValue()) {
+            $qb->andWhere('(orgname ILIKE :searchValue OR reponame ILIKE :searchValue OR provider ILIKE :searchValue)')
+                ->setParameter('searchValue', '%'.$criteria->getSearchValue().'%');
+        }
+        if (in_array($criteria->getColumnName(), ['reponame', 'id', 'orgname', 'provider', 'trust', 'creationdate'], true)) {
+            $qb->addOrderBy($criteria->getColumnName(), $criteria->getSortingMethod());
+        }
+
+        $countFiltered = $qb->executeQuery()->rowCount();
+
+        $qb
+            ->setMaxResults($criteria->getPerPage())
+            ->setFirstResult($criteria->getOffset())
+        ;
+
+        return [
+            'count' => $count,
+            'filteredCount' => $countFiltered,
+            'page' => $criteria->getPage(),
+            'perPage' => $criteria->getPerPage(),
+            'items' => $qb->executeQuery()->fetchAllAssociative()];
+    }
 }

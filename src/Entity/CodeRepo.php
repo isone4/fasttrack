@@ -2,12 +2,21 @@
 
 namespace App\Entity;
 
-use App\Repository\CodeRepoRepository;
+use ApiPlatform\Core\Annotation\ApiFilter;
+use ApiPlatform\Core\Annotation\ApiResource;
+use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\OrderFilter;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity(repositoryClass=CodeRepoRepository::class)
+ * @ORM\Entity()
  */
+#[ApiResource(
+    collectionOperations: ['get'],
+    itemOperations: ['get'],
+)]
+#[ApiFilter(
+    OrderFilter::class, properties: ['creationdate', 'trust'], arguments: ['orderParameterName' => 'order'])]
+
 class CodeRepo
 {
     /**

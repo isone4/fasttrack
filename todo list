@@ -1,0 +1,10 @@
+1. -------done---------headerlinksparser in github throws "Warning: Undefined array key "link"" error
+2. -------done---------gitlab throws "Warning: Undefined array key "contributions"" while fetching high number of commits
+3. ratelimiter for providers
+
+leci request -> skoncza sie tokeny -> zapisz do bazy(pamietaj ktore zapisal) -> wyrzuc toomanyexceptions -> po uplywie czasu kontynuuj od ostatniego miejsca
+
+-----------------------------------------------------------
+1. robie JEDEN request i pobieram nazwe providera, nazwe organizacji i liste repozytoriow
+2. wysylam to do kolejki
+3. w kolejce wykonuja sie requesty o kolejna strone, o commity itp
