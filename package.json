@@ -1,0 +1,19 @@
+{
+  "name": "fasttrack",
+  "version": "1.0.0",
+  "description": "This is a small app to fetch list of repositories of an organization. It can collect a list of repositories, save to database and display as a list on a website.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/isone4/fasttrack.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/isone4/fasttrack/issues"
+  },
+  "homepage": "https://github.com/isone4/fasttrack#readme"
+}

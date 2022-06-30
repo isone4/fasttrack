@@ -21,7 +21,7 @@ final class GithubCodeRepositoryProvider implements Provider
      */
        public function fetch(FetchCriteria $criteria): iterable
        {
-           $this->rateLimiter($criteria);
+//           $this->rateLimiter($criteria);
            $response = $this->httpClient->request('GET', "https://api.github.com/orgs/$criteria->organizationName/repos?page=1&per_page=100");
            $headerlinks = $this->fetchLinksFromHeader($response->getHeaders());
            $codeRepositories = $this->buildCodeRepositories($response->toArray(), $criteria, []);
@@ -40,13 +40,13 @@ final class GithubCodeRepositoryProvider implements Provider
         return $headerLinksParser->headerLinks();
     }
 
-    private function rateLimiter(FetchCriteria $criteria)
-    {
-        $limiter = $this->anonymousApiLimiter->create($criteria->providerName);
-        if (false === $limiter->consume()->isAccepted()) {
-            throw new TooManyRequestsHttpException();
-        }
-    }
+//    private function rateLimiter(FetchCriteria $criteria)
+//    {
+//        $limiter = $this->anonymousApiLimiter->create($criteria->providerName);
+//        if (false === $limiter->consume()->isAccepted()) {
+//            throw new TooManyRequestsHttpException();
+//        }
+//    }
 
     /**
      * @param array $fetchedData
@@ -62,24 +62,27 @@ final class GithubCodeRepositoryProvider implements Provider
     private function buildCodeRepositories(array $fetchedData, FetchCriteria $criteria, array $codeRepositories): array
     {
         foreach ($fetchedData as $item) {
+//            $contributions = 0;
             $contributorsUrl = $item['contributors_url'];
             $contributorsArray = $this->httpClient->request('GET', "$contributorsUrl?page=1&per_page=100");
             $contributorsHeader = $this->fetchLinksFromHeader($contributorsArray->getHeaders());
             $commitsArray = $contributorsArray->toArray();
-            $commitsArray = array_map(static fn(array $contributor) => $contributor['contributions'], $commitsArray);
+            $commitsArray = array_map(static fn(array $contributor) => $contributions = $contributor['contributions'], $commitsArray);
             $contributions = array_sum($commitsArray);
+//            dump('before', $contributions);
             $commitsNext = $contributorsHeader['next'] ?? '';
             while($commitsNext) {
-                $headerCommitsNext = $this->httpClient->request('GET', $contributorsHeader['next']);
+                $headerCommitsNext = $this->httpClient->request('GET', "$commitsNext?page=1&per_page=100");
+//                $headerCommitsNext = $this->httpClient->request('GET', "https://api.github.com/repos/cocoders/Sylius/contributors?page=1&per_page=100");
                 $commitsHeader = $this->fetchLinksFromHeader($headerCommitsNext->getHeaders());
                 $headerArray = $headerCommitsNext->toArray();
-                dump($headerArray['contributions']);
-                $headerArray = array_map(static fn(array $contributor) => $contributor['contributions'], $headerArray);
-                $contributions += array_sum($headerArray);
-                $contributorsHeader = $commitsHeader['next'] ?? '';
+                $contributionsArray = array_map(static fn(array $contributor) => $contributor['contributions'], $headerArray);
+//                dump('in', $contributions, array_sum($contributionsArray));
+                $contributions += array_sum($contributionsArray);
+                $commitsNext = $commitsHeader['next'] ?? '';
             }
-            dump($contributions);die;
 
+//            dump('after', $contributions);
             $codeRepositories[] = new CodeRepository(
                 externalId: (string)$item['id'],
                 orgname: $criteria->organizationName,
@@ -92,6 +95,7 @@ final class GithubCodeRepositoryProvider implements Provider
                 contributionsNumber: $contributions
             );
         }
+//        dump($codeRepositories);die;
         return $codeRepositories;
     }
 }

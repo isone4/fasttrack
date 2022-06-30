@@ -39,12 +39,12 @@
         <tbody>
             {% for repository in repositories %}
             <tr>
-                <td> {{ repository.getId }} </td>
-                <td> {{ repository.getOrgname }} </td>
-                <td> <a href="{{ repository.getUrl }}" target="_blank"> {{ repository.getReponame }} </a></td>
-                <td> {{ repository.getProvider }} </td>
-                <td> {{ repository.getTrust }} </td>
-                <td> {{ repository.getCreationdate|date("Y.m.d") }}</td>
+                <td> {{ repository.id }} </td>
+                <td> {{ repository.orgname }} </td>
+                <td> <a href="" target="_blank"> {{ repository.reponame }} </a></td>
+                <td> {{ repository.provider }} </td>
+                <td> {{ repository.trust }} </td>
+                <td> {{ repository.creationdate|date("Y.m.d") }}</td>
             </tr>
 
             {% endfor %}

@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\CodeRepositoryProviders;
 
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
+//use Symfony\Component\RateLimiter\Policy\FixedWindowLimiter;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class BitbucketCodeRepositoryProvider implements Provider
 {
-    public function __construct(private HttpClientInterface $httpClient, private RateLimiterFactory $anonymousApiLimiter)
+    public function __construct(private HttpClientInterface $httpClient, private RateLimiterFactory $anonymousApiLimiter, MessageBusInterface $bus)
     {
     }
 
@@ -29,6 +31,13 @@ class BitbucketCodeRepositoryProvider implements Provider
             }
             return $codeRepositories;
         }
+
+//        public function bus(FetchCriteria $criteria, MessageBusInterface $bus): iterable
+//        {
+//            $response = $this->request($criteria->providerName), "https://api.bitbucket.org/2.0/repositories/$criteria->organizationName?page=1&per_page=100");
+//            $responseArray
+//            $bus->dispatch($nextPage);
+//        }
 
     /**
      * @throws \Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface
@@ -53,7 +62,7 @@ class BitbucketCodeRepositoryProvider implements Provider
                 }
                 $openIssuesArray = $this->request($providerName, $item['links']['pullrequests']['href']);
                 $openIssues = count($openIssuesArray['values']);
-                $issuesNext = $openIssues['next'] ?? '';
+                $issuesNext = $openIssuesArray['next'] ?? '';
                 while($issuesNext) {
                     $issuesNextPage = $this->request($providerName, $issuesNext);
                     $openIssues += count($issuesNextPage['values']);
